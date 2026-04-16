@@ -23,6 +23,10 @@ Production-oriented MVP внутренней системы продавца Ste
 - Audit log writes for critical inventory/order actions.
 - Alembic migration for reservation link `code_items.current_order_id`.
 
+### Stage 4 (web scaffold)
+- Next.js admin panel scaffold with pages: login, dashboard, pricing, inventory, orders, settings, reports.
+- Status badges for risk states and basic operator action UI in orders page.
+
 ## Быстрый запуск
 
 ```bash
