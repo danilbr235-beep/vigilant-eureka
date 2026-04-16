@@ -16,23 +16,48 @@ async function getJson(path: string, token?: string) {
   return res.json()
 }
 
-export async function loginRequest(email: string, password: string) {
-  const res = await fetch(`${API_BASE}/auth/login`, {
+async function postJson(path: string, body: unknown, token?: string, extraHeaders?: Record<string, string>) {
+  const headers: Record<string, string> = { "Content-Type": "application/json", ...(extraHeaders ?? {}) }
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password })
+    headers,
+    body: JSON.stringify(body)
   })
 
   if (!res.ok) {
-    throw new Error(`login failed: ${res.status}`)
+    const text = await res.text()
+    throw new Error(`${path} failed: ${res.status} ${text}`)
   }
 
   return res.json()
 }
 
+export async function loginRequest(email: string, password: string) {
+  return postJson("/auth/login", { email, password })
+}
+
 export async function fetchOrders(token?: string): Promise<OrderItem[]> {
   const data = await getJson("/orders", token)
   return data.items ?? []
+}
+
+export async function reserveOrder(orderId: number, codeIds: number[], token?: string) {
+  return postJson(
+    `/orders/${orderId}/reserve`,
+    { code_item_ids: codeIds },
+    token,
+    { "X-Idempotency-Key": crypto.randomUUID() }
+  )
+}
+
+export async function fulfillOrder(orderId: number, token?: string) {
+  return postJson(`/orders/${orderId}/fulfill`, {}, token)
+}
+
+export async function markOrderProblem(orderId: number, token?: string) {
+  return postJson(`/orders/${orderId}/problem`, {}, token)
 }
 
 export async function fetchPricing(token?: string): Promise<PricingItem[]> {
@@ -41,6 +66,9 @@ export async function fetchPricing(token?: string): Promise<PricingItem[]> {
 }
 
 export async function fetchInventory(token?: string): Promise<InventoryItem[]> {
-  const data = await getJson("/inventory/codes", token)
-  return data
+  return getJson("/inventory/codes", token)
+}
+
+export async function revealCode(codeId: number, token?: string) {
+  return getJson(`/inventory/codes/${codeId}/reveal`, token)
 }

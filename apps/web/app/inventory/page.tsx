@@ -1,17 +1,30 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
+import { useState } from "react"
+import { useMutation, useQuery } from "@tanstack/react-query"
 
-import { fetchInventory } from "../../lib/api"
+import { fetchInventory, revealCode } from "../../lib/api"
 import { inventory as mockInventory } from "../../lib/mock"
 import { useAppStore } from "../../lib/store"
 
 export default function InventoryPage() {
   const token = useAppStore((s) => s.token)
+  const role = useAppStore((s) => s.role)
+  const [revealed, setRevealed] = useState<Record<number, string>>({})
+
   const query = useQuery({
     queryKey: ["inventory", token],
     queryFn: () => fetchInventory(token),
     retry: false
+  })
+
+  const revealMutation = useMutation({
+    mutationFn: (codeId: number) => revealCode(codeId, token),
+    onSuccess: (data) => {
+      if (data?.id && data?.code) {
+        setRevealed((prev) => ({ ...prev, [data.id]: data.code }))
+      }
+    }
   })
 
   const rows = query.data && query.data.length > 0
@@ -24,6 +37,8 @@ export default function InventoryPage() {
     }))
     : mockInventory
 
+  const canReveal = role === "admin" || role === "operator"
+
   return (
     <div className="grid">
       <h1>Inventory</h1>
@@ -34,9 +49,9 @@ export default function InventoryPage() {
             <tr>
               <th>ID</th>
               <th>Masked code</th>
-              <th>Currency</th>
-              <th>Nominal</th>
+              <th>Revealed code</th>
               <th>Status</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -44,9 +59,17 @@ export default function InventoryPage() {
               <tr key={item.id}>
                 <td>{item.id}</td>
                 <td>{item.masked}</td>
-                <td>{item.currency}</td>
-                <td>{item.nominal}</td>
+                <td>{revealed[item.id] ?? "—"}</td>
                 <td>{item.status}</td>
+                <td>
+                  <button
+                    className="button"
+                    disabled={!canReveal || revealMutation.isPending}
+                    onClick={() => revealMutation.mutate(item.id)}
+                  >
+                    Reveal
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

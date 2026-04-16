@@ -1,18 +1,36 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import { fetchOrders } from "../../lib/api"
+import { fetchOrders, fulfillOrder, markOrderProblem, reserveOrder } from "../../lib/api"
 import { useAppStore } from "../../lib/store"
 
 export default function OrdersPage() {
   const token = useAppStore((s) => s.token)
   const role = useAppStore((s) => s.role)
+  const [reserveCodeId, setReserveCodeId] = useState<Record<number, string>>({})
+  const qc = useQueryClient()
 
   const ordersQuery = useQuery({
     queryKey: ["orders", token],
     queryFn: () => fetchOrders(token),
     retry: false
+  })
+
+  const reserveMutation = useMutation({
+    mutationFn: ({ orderId, codeId }: { orderId: number; codeId: number }) => reserveOrder(orderId, [codeId], token),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["orders", token] })
+  })
+
+  const fulfillMutation = useMutation({
+    mutationFn: (orderId: number) => fulfillOrder(orderId, token),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["orders", token] })
+  })
+
+  const problemMutation = useMutation({
+    mutationFn: (orderId: number) => markOrderProblem(orderId, token),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["orders", token] })
   })
 
   const canOperate = role === "admin" || role === "operator"
@@ -32,6 +50,7 @@ export default function OrdersPage() {
                 <th>Order ID</th>
                 <th>External ID</th>
                 <th>Status</th>
+                <th>Reserve code id</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -42,9 +61,28 @@ export default function OrdersPage() {
                   <td>{order.external_order_id}</td>
                   <td>{order.status}</td>
                   <td>
-                    <button className="button" disabled={!canOperate}>Reserve</button>{" "}
-                    <button className="button" disabled={!canOperate}>Fulfill</button>{" "}
-                    <button className="button" disabled={!canOperate}>Problem</button>
+                    <input
+                      className="input"
+                      style={{ width: 100 }}
+                      value={reserveCodeId[order.id] ?? ""}
+                      onChange={(e) => setReserveCodeId((prev) => ({ ...prev, [order.id]: e.target.value }))}
+                      placeholder="code id"
+                    />
+                  </td>
+                  <td>
+                    <button
+                      className="button"
+                      disabled={!canOperate || reserveMutation.isPending}
+                      onClick={() => {
+                        const codeId = Number(reserveCodeId[order.id])
+                        if (!codeId) return alert("Enter code id")
+                        reserveMutation.mutate({ orderId: order.id, codeId })
+                      }}
+                    >
+                      Reserve
+                    </button>{" "}
+                    <button className="button" disabled={!canOperate || fulfillMutation.isPending} onClick={() => fulfillMutation.mutate(order.id)}>Fulfill</button>{" "}
+                    <button className="button" disabled={!canOperate || problemMutation.isPending} onClick={() => problemMutation.mutate(order.id)}>Problem</button>
                   </td>
                 </tr>
               ))}
