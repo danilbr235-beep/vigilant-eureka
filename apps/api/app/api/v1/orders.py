@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, require_roles
@@ -6,6 +6,7 @@ from app.db.session import get_db
 from app.models import Order, UserRole
 from app.schemas.orders import OrderCreateRequest, OrderFulfillResponse, OrderReserveRequest
 from app.services.orders_service import OrdersService
+from app.services.reservation_service import ReservationService
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -31,12 +32,26 @@ def get_order(order_id: int, db: Session = Depends(get_db), _=Depends(require_ro
 
 
 @router.post("/{order_id}/reserve")
-def reserve(order_id: int, payload: OrderReserveRequest, db: Session = Depends(get_db), user=Depends(require_roles(UserRole.admin, UserRole.operator))):
+def reserve(
+    order_id: int,
+    payload: OrderReserveRequest,
+    db: Session = Depends(get_db),
+    user=Depends(require_roles(UserRole.admin, UserRole.operator)),
+    x_idempotency_key: str = Header(default="", alias="X-Idempotency-Key"),
+):
+    if not x_idempotency_key:
+        raise HTTPException(status_code=400, detail="X-Idempotency-Key is required")
+
     try:
-        row = OrdersService(db).reserve_codes(order_id=order_id, code_item_ids=payload.code_item_ids, actor_user_id=user.id)
+        result = ReservationService(db).reserve_with_idempotency(
+            order_id=order_id,
+            code_item_ids=payload.code_item_ids,
+            actor_user_id=user.id,
+            idempotency_key=x_idempotency_key,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-    return {"id": row.id, "reserved": True}
+    return {"id": result["order_id"], "reserved": True, "reserved_count": result["reserved_count"]}
 
 
 @router.post("/{order_id}/fulfill", response_model=OrderFulfillResponse)
@@ -56,3 +71,9 @@ def problem(order_id: int, _=Depends(require_roles(UserRole.admin, UserRole.oper
 @router.post("/{order_id}/complete")
 def complete(order_id: int, _=Depends(require_roles(UserRole.admin, UserRole.operator))):
     return {"id": order_id, "completed": True}
+
+
+@router.post("/reservations/clear-expired")
+def clear_expired(db: Session = Depends(get_db), _=Depends(require_roles(UserRole.admin))):
+    cleared = ReservationService(db).clear_expired_reservations()
+    return {"cleared": cleared}
