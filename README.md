@@ -1,38 +1,42 @@
 # CalcSteam
 
-## Что готово сейчас
+Production-oriented MVP внутренней системы продавца Steam-пополнений (не клиентская витрина).
 
-- Инициализирован репозиторий проекта.
-- Подготовлен стартовый каркас для дальнейшей поэтапной разработки MVP.
+## Stage 1 (сделано)
 
-## Что предстоит сделать
+- Собран monorepo scaffold: `apps/web`, `apps/api`, `packages/shared`, `infra`, `docs`.
+- Поднят backend foundation на FastAPI.
+- Реализованы SQLAlchemy-модели всех 12 сущностей из ТЗ.
+- Добавлена initial Alembic migration с нужными индексами.
+- Реализованы auth endpoints (`/api/v1/auth/login`, `/api/v1/auth/me`) и RBAC dependency layer.
 
-### Этап 1
-- Scaffold monorepo: `apps/web`, `apps/api`, `packages/shared`, `infra`, `docs`.
-- Backend foundation (FastAPI, SQLAlchemy, Alembic).
-- Auth + RBAC (`admin`, `operator`, `viewer`).
-- Базовые модели БД и initial migration.
+## Структура
 
-### Этап 2
-- Pricing engine по формулам ТЗ.
-- Rates module и price snapshots.
-- Settings module (конфиги pricing/promotion).
+- `apps/api` — FastAPI, SQLAlchemy, Alembic.
+- `apps/web` — будущая админ-панель (Stage 4).
+- `packages/shared` — общие контракты/типы.
+- `infra` — nginx конфиг.
+- `docs` — этапная документация.
 
-### Этап 3
-- Inventory + Orders flow (reserve/fulfill/problem/complete).
-- Redis locks (TTL reserve, anti-double-click, distributed scheduler locks).
-- Шифрование кодов и audit log критических операций.
+## Быстрый запуск (локально)
 
-### Этап 4
-- Frontend admin panel (login/dashboard/pricing/inventory/orders/settings/reports).
-- Role-based UI ограничения и статусы рисков.
+```bash
+docker compose up --build
+```
 
-### Этап 5
-- Unit/integration/E2E тесты.
-- Seed-данные.
-- Docker Compose (web/api/db/redis/nginx) + healthchecks.
-- Финальный README и runbook запуска/эксплуатации.
+API health check:
 
-## Следующий шаг
+```bash
+curl http://localhost:8000/health
+```
 
-Начать с Этапа 1 и последовательно реализовать production-ready MVP по ТЗ.
+## Миграции
+
+```bash
+cd apps/api
+alembic upgrade head
+```
+
+## Переменные окружения
+
+См. `.env.example`.
