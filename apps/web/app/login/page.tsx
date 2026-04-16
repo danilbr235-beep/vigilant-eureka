@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { useAppStore } from "../../lib/store"
+import { loginRequest } from "../../lib/api"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -13,21 +14,14 @@ export default function LoginPage() {
   const router = useRouter()
 
   async function onSubmit() {
-    const res = await fetch("http://localhost:8000/api/v1/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
-    })
-
-    if (!res.ok) {
+    try {
+      const data = await loginRequest(email, password)
+      setToken(data.access_token)
+      setRole(data.role)
+      router.push("/orders")
+    } catch {
       alert("Login failed")
-      return
     }
-
-    const data = await res.json()
-    setToken(data.access_token)
-    setRole(data.role)
-    router.push("/orders")
   }
 
   return (
