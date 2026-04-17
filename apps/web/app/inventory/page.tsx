@@ -11,6 +11,7 @@ export default function InventoryPage() {
   const token = useAppStore((s) => s.token)
   const role = useAppStore((s) => s.role)
   const [revealed, setRevealed] = useState<Record<number, string>>({})
+  const statusOptions = ["available", "reserved", "sold", "blocked"] as const
 
   const [rawCode, setRawCode] = useState("")
   const [costRub, setCostRub] = useState("100")
@@ -106,14 +107,15 @@ export default function InventoryPage() {
                     </button>
                     <select
                       className="select"
-                      defaultValue={item.status}
-                      disabled={!canReveal || statusMutation.isPending}
+                      value={item.status}
+                      disabled={!canReveal || statusMutation.isPending || query.isError}
                       onChange={(e) => statusMutation.mutate({ codeId: item.id, status: e.target.value })}
                     >
-                      <option value="available">available</option>
-                      <option value="reserved">reserved</option>
-                      <option value="sold">sold</option>
-                      <option value="blocked">blocked</option>
+                      {statusOptions.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </td>
@@ -121,6 +123,9 @@ export default function InventoryPage() {
             ))}
           </tbody>
         </table>
+        {createMutation.isError && <p>Failed to create code.</p>}
+        {revealMutation.isError && <p>Failed to reveal code.</p>}
+        {statusMutation.isError && <p>Failed to update code status.</p>}
       </div>
     </div>
   )

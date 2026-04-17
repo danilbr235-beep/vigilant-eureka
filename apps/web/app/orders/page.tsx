@@ -60,6 +60,8 @@ export default function OrdersPage() {
   })
 
   const canOperate = role === "admin" || role === "operator"
+  const canFulfillOrder = (status: string) => status === "reserved"
+  const canCompleteOrder = (status: string) => status === "fulfilled" || status === "problem"
 
   return (
     <div className="grid">
@@ -121,15 +123,32 @@ export default function OrdersPage() {
                     >
                       Reserve
                     </button>{" "}
-                    <button className="button" disabled={!canOperate || fulfillMutation.isPending} onClick={() => fulfillMutation.mutate(order.id)}>Fulfill</button>{" "}
+                    <button
+                      className="button"
+                      disabled={!canOperate || fulfillMutation.isPending || !canFulfillOrder(order.status)}
+                      onClick={() => fulfillMutation.mutate(order.id)}
+                    >
+                      Fulfill
+                    </button>{" "}
                     <button className="button" disabled={!canOperate || problemMutation.isPending} onClick={() => problemMutation.mutate(order.id)}>Problem</button>{" "}
-                    <button className="button" disabled={!canOperate || completeMutation.isPending} onClick={() => completeMutation.mutate(order.id)}>Complete</button>
+                    <button
+                      className="button"
+                      disabled={!canOperate || completeMutation.isPending || !canCompleteOrder(order.status)}
+                      onClick={() => completeMutation.mutate(order.id)}
+                    >
+                      Complete
+                    </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
+        {createMutation.isError && <p>Failed to create order.</p>}
+        {reserveMutation.isError && <p>Failed to reserve code for order.</p>}
+        {fulfillMutation.isError && <p>Failed to fulfill order (only reserved orders can be fulfilled).</p>}
+        {problemMutation.isError && <p>Failed to mark order as problem.</p>}
+        {completeMutation.isError && <p>Failed to complete order (only fulfilled/problem orders can be completed).</p>}
       </div>
     </div>
   )
