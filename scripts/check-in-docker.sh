@@ -3,6 +3,23 @@ set -eu
 
 MODE="${1:-all}"
 
+print_usage() {
+  echo "Usage: $0 [api|web|all]"
+}
+
+case "$MODE" in
+  api|web|all)
+    ;;
+  -h|--help|help)
+    print_usage
+    exit 0
+    ;;
+  *)
+    print_usage
+    exit 1
+    ;;
+esac
+
 if command -v git >/dev/null 2>&1; then
   ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
   if [ -n "${ROOT}" ]; then
@@ -48,9 +65,5 @@ case "$MODE" in
   all)
     run_api
     run_web
-    ;;
-  *)
-    echo "Usage: $0 [api|web|all]"
-    exit 1
     ;;
 esac

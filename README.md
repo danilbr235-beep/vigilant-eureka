@@ -71,6 +71,7 @@ docker run --rm -v "$PWD/apps/web:/app" -w /app node:20-alpine sh -lc "npm insta
 ./scripts/check-in-docker.sh all   # api + web
 ./scripts/check-in-docker.sh api   # только api
 ./scripts/check-in-docker.sh web   # только web
+./scripts/check-in-docker.sh --help
 ```
 
 Или через `make`:
