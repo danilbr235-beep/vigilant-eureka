@@ -3,6 +3,16 @@ set -eu
 
 MODE="${1:-all}"
 
+if [ ! -f "./docker-compose.yml" ]; then
+  echo "Run this script from repository root (docker-compose.yml not found)."
+  exit 1
+fi
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Docker is required but not found in PATH."
+  exit 1
+fi
+
 run_api() {
   echo "==> Running API tests in docker"
   docker run --rm \

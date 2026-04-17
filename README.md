@@ -78,6 +78,7 @@ docker run --rm -v "$PWD/apps/web:/app" -w /app node:20-alpine sh -lc "npm insta
 make check      # api + web
 make check-api  # только api
 make check-web  # только web
+make help       # показать все цели
 ```
 
 ## Миграции
