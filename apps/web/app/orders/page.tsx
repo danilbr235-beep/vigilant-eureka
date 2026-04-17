@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import { createOrder, fetchOrders, fulfillOrder, markOrderProblem, reserveOrder } from "../../lib/api"
+import { completeOrder, createOrder, fetchOrders, fulfillOrder, markOrderProblem, reserveOrder } from "../../lib/api"
 import { useAppStore } from "../../lib/store"
 
 export default function OrdersPage() {
@@ -51,6 +51,11 @@ export default function OrdersPage() {
 
   const problemMutation = useMutation({
     mutationFn: (orderId: number) => markOrderProblem(orderId, token),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["orders", token] })
+  })
+
+  const completeMutation = useMutation({
+    mutationFn: (orderId: number) => completeOrder(orderId, token),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["orders", token] })
   })
 
@@ -117,7 +122,8 @@ export default function OrdersPage() {
                       Reserve
                     </button>{" "}
                     <button className="button" disabled={!canOperate || fulfillMutation.isPending} onClick={() => fulfillMutation.mutate(order.id)}>Fulfill</button>{" "}
-                    <button className="button" disabled={!canOperate || problemMutation.isPending} onClick={() => problemMutation.mutate(order.id)}>Problem</button>
+                    <button className="button" disabled={!canOperate || problemMutation.isPending} onClick={() => problemMutation.mutate(order.id)}>Problem</button>{" "}
+                    <button className="button" disabled={!canOperate || completeMutation.isPending} onClick={() => completeMutation.mutate(order.id)}>Complete</button>
                   </td>
                 </tr>
               ))}

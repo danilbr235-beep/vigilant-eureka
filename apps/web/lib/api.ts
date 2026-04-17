@@ -91,6 +91,10 @@ export async function markOrderProblem(orderId: number, token?: string) {
   return postJson(`/orders/${orderId}/problem`, {}, token)
 }
 
+export async function completeOrder(orderId: number, token?: string) {
+  return postJson(`/orders/${orderId}/complete`, {}, token)
+}
+
 export async function fetchPricing(token?: string): Promise<PricingItem[]> {
   const data = await getJson("/pricing/recommendations", token)
   return (data.items as PricingItem[]) ?? []
@@ -111,6 +115,10 @@ export async function createCode(payload: {
 
 export async function revealCode(codeId: number, token?: string) {
   return getJson(`/inventory/codes/${codeId}/reveal`, token)
+}
+
+export async function patchCodeStatus(codeId: number, status: string, token?: string) {
+  return patchJson(`/inventory/codes/${codeId}/status`, { status }, token)
 }
 
 export async function fetchReportProfit(token?: string) {

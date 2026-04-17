@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import { createCode, fetchInventory, revealCode } from "../../lib/api"
+import { createCode, fetchInventory, patchCodeStatus, revealCode } from "../../lib/api"
 import { inventory as mockInventory } from "../../lib/mock"
 import { useAppStore } from "../../lib/store"
 
@@ -46,6 +46,11 @@ export default function InventoryPage() {
         setRevealed((prev) => ({ ...prev, [data.id as number]: String(data.code) }))
       }
     }
+  })
+
+  const statusMutation = useMutation({
+    mutationFn: ({ codeId, status }: { codeId: number; status: string }) => patchCodeStatus(codeId, status, token),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["inventory", token] })
   })
 
   const rows = query.data && query.data.length > 0
@@ -91,13 +96,26 @@ export default function InventoryPage() {
                 <td>{revealed[item.id] ?? "—"}</td>
                 <td>{item.status}</td>
                 <td>
-                  <button
-                    className="button"
-                    disabled={!canReveal || revealMutation.isPending}
-                    onClick={() => revealMutation.mutate(item.id)}
-                  >
-                    Reveal
-                  </button>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      className="button"
+                      disabled={!canReveal || revealMutation.isPending}
+                      onClick={() => revealMutation.mutate(item.id)}
+                    >
+                      Reveal
+                    </button>
+                    <select
+                      className="select"
+                      defaultValue={item.status}
+                      disabled={!canReveal || statusMutation.isPending}
+                      onChange={(e) => statusMutation.mutate({ codeId: item.id, status: e.target.value })}
+                    >
+                      <option value="available">available</option>
+                      <option value="reserved">reserved</option>
+                      <option value="sold">sold</option>
+                      <option value="blocked">blocked</option>
+                    </select>
+                  </div>
                 </td>
               </tr>
             ))}
