@@ -10,6 +10,10 @@ class CodeCreateRequest(BaseModel):
     cost_rub: float
 
 
+class CodeStatusPatchRequest(BaseModel):
+    status: CodeStatus
+
+
 class CodeResponse(BaseModel):
     id: int
     masked_code: str

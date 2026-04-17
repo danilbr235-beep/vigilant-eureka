@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, require_roles
 from app.db.session import get_db
 from app.models import CodeStatus, UserRole
-from app.schemas.inventory import CodeCreateRequest, CodeResponse, CodeRevealResponse
+from app.schemas.inventory import CodeCreateRequest, CodeResponse, CodeRevealResponse, CodeStatusPatchRequest
 from app.services.inventory_service import InventoryService
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
@@ -42,8 +42,17 @@ def reveal_code(code_id: int, db: Session = Depends(get_db), user=Depends(requir
 
 
 @router.patch("/codes/{code_id}/status")
-def patch_code_status(code_id: int, _=Depends(require_roles(UserRole.admin, UserRole.operator))):
-    return {"id": code_id, "updated": True}
+def patch_code_status(
+    code_id: int,
+    payload: CodeStatusPatchRequest,
+    db: Session = Depends(get_db),
+    user=Depends(require_roles(UserRole.admin, UserRole.operator)),
+):
+    try:
+        item = InventoryService(db).update_status(code_id=code_id, new_status=payload.status, actor_user_id=user.id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    return {"id": item.id, "status": item.status}
 
 
 @router.get("/stock-summary")

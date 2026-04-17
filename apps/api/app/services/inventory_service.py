@@ -57,3 +57,24 @@ class InventoryService:
         )
         self.db.commit()
         return plain
+
+    def update_status(self, *, code_id: int, new_status: CodeStatus, actor_user_id: int) -> CodeItem:
+        item = self.db.get(CodeItem, code_id)
+        if not item:
+            raise ValueError("Code not found")
+
+        item.status = new_status
+        if new_status != CodeStatus.reserved:
+            item.reserved_until = None
+            item.current_order_id = None
+
+        self.audit.log(
+            actor_user_id=actor_user_id,
+            action="inventory.code_status_updated",
+            entity_type="code_item",
+            entity_id=str(code_id),
+            payload={"status": new_status.value},
+        )
+        self.db.commit()
+        self.db.refresh(item)
+        return item

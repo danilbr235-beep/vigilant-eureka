@@ -95,3 +95,37 @@ class OrdersService:
         )
         self.db.commit()
         return revealed_codes
+
+    def mark_problem(self, *, order_id: int, actor_user_id: int, reason: str | None = None) -> Order:
+        order = self.db.get(Order, order_id)
+        if not order:
+            raise ValueError("Order not found")
+        order.status = OrderStatus.problem
+        order.manual_review = True
+        self.audit.log(
+            actor_user_id=actor_user_id,
+            action="orders.problem",
+            entity_type="order",
+            entity_id=str(order_id),
+            payload={"reason": reason},
+        )
+        self.db.commit()
+        self.db.refresh(order)
+        return order
+
+    def complete(self, *, order_id: int, actor_user_id: int) -> Order:
+        order = self.db.get(Order, order_id)
+        if not order:
+            raise ValueError("Order not found")
+        if order.status not in {OrderStatus.fulfilled, OrderStatus.problem}:
+            raise ValueError("Only fulfilled or problem order can be completed")
+        order.status = OrderStatus.completed
+        self.audit.log(
+            actor_user_id=actor_user_id,
+            action="orders.completed",
+            entity_type="order",
+            entity_id=str(order_id),
+        )
+        self.db.commit()
+        self.db.refresh(order)
+        return order

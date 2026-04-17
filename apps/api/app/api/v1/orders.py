@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, require_roles
+from app.api.deps import require_roles
 from app.db.session import get_db
 from app.models import Order, UserRole
 from app.schemas.orders import OrderCreateRequest, OrderFulfillResponse, OrderReserveRequest
@@ -64,13 +64,21 @@ def fulfill(order_id: int, db: Session = Depends(get_db), user=Depends(require_r
 
 
 @router.post("/{order_id}/problem")
-def problem(order_id: int, _=Depends(require_roles(UserRole.admin, UserRole.operator))):
-    return {"id": order_id, "problem": True}
+def problem(order_id: int, db: Session = Depends(get_db), user=Depends(require_roles(UserRole.admin, UserRole.operator))):
+    try:
+        row = OrdersService(db).mark_problem(order_id=order_id, actor_user_id=user.id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    return {"id": row.id, "problem": True, "status": row.status}
 
 
 @router.post("/{order_id}/complete")
-def complete(order_id: int, _=Depends(require_roles(UserRole.admin, UserRole.operator))):
-    return {"id": order_id, "completed": True}
+def complete(order_id: int, db: Session = Depends(get_db), user=Depends(require_roles(UserRole.admin, UserRole.operator))):
+    try:
+        row = OrdersService(db).complete(order_id=order_id, actor_user_id=user.id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"id": row.id, "completed": True, "status": row.status}
 
 
 @router.post("/reservations/clear-expired")
