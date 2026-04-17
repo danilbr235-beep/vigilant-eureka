@@ -3,6 +3,7 @@ export type PricingItem = { currency: string; nominal: number; recommended_price
 export type InventoryItem = { id: number; masked_code: string; status: string; cost_rub: number }
 
 type JsonMap = Record<string, unknown>
+type MaybeApiError = { detail?: string }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000/api/v1"
 
@@ -47,9 +48,24 @@ async function patchJson(path: string, body: unknown, token?: string) {
   })
 
   if (!res.ok) {
-    throw new Error(`${path} failed: ${res.status}`)
+    let detail = ""
+    try {
+      const payload = await res.json() as MaybeApiError
+      detail = payload?.detail ? ` ${payload.detail}` : ""
+    } catch {
+      const text = await res.text()
+      detail = text ? ` ${text}` : ""
+    }
+    throw new Error(`${path} failed: ${res.status}${detail}`)
   }
   return res.json()
+}
+
+export function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message
+  }
+  return fallback
 }
 
 export async function loginRequest(email: string, password: string) {

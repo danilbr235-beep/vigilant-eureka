@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import { completeOrder, createOrder, fetchOrders, fulfillOrder, markOrderProblem, reserveOrder } from "../../lib/api"
+import { completeOrder, createOrder, fetchOrders, fulfillOrder, getErrorMessage, markOrderProblem, reserveOrder } from "../../lib/api"
 import { useAppStore } from "../../lib/store"
 
 export default function OrdersPage() {
@@ -144,11 +144,11 @@ export default function OrdersPage() {
             </tbody>
           </table>
         )}
-        {createMutation.isError && <p>Failed to create order.</p>}
-        {reserveMutation.isError && <p>Failed to reserve code for order.</p>}
-        {fulfillMutation.isError && <p>Failed to fulfill order (only reserved orders can be fulfilled).</p>}
-        {problemMutation.isError && <p>Failed to mark order as problem.</p>}
-        {completeMutation.isError && <p>Failed to complete order (only fulfilled/problem orders can be completed).</p>}
+        {createMutation.isError && <p>{getErrorMessage(createMutation.error, "Failed to create order.")}</p>}
+        {reserveMutation.isError && <p>{getErrorMessage(reserveMutation.error, "Failed to reserve code for order.")}</p>}
+        {fulfillMutation.isError && <p>{getErrorMessage(fulfillMutation.error, "Failed to fulfill order (only reserved orders can be fulfilled).")}</p>}
+        {problemMutation.isError && <p>{getErrorMessage(problemMutation.error, "Failed to mark order as problem.")}</p>}
+        {completeMutation.isError && <p>{getErrorMessage(completeMutation.error, "Failed to complete order (only fulfilled/problem orders can be completed).")}</p>}
       </div>
     </div>
   )

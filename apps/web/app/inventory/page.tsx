@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import { createCode, fetchInventory, patchCodeStatus, revealCode } from "../../lib/api"
+import { createCode, fetchInventory, getErrorMessage, patchCodeStatus, revealCode } from "../../lib/api"
 import { inventory as mockInventory } from "../../lib/mock"
 import { useAppStore } from "../../lib/store"
 
@@ -123,9 +123,9 @@ export default function InventoryPage() {
             ))}
           </tbody>
         </table>
-        {createMutation.isError && <p>Failed to create code.</p>}
-        {revealMutation.isError && <p>Failed to reveal code.</p>}
-        {statusMutation.isError && <p>Failed to update code status.</p>}
+        {createMutation.isError && <p>{getErrorMessage(createMutation.error, "Failed to create code.")}</p>}
+        {revealMutation.isError && <p>{getErrorMessage(revealMutation.error, "Failed to reveal code.")}</p>}
+        {statusMutation.isError && <p>{getErrorMessage(statusMutation.error, "Failed to update code status.")}</p>}
       </div>
     </div>
   )
