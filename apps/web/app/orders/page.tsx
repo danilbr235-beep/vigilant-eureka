@@ -3,19 +3,40 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import { fetchOrders, fulfillOrder, markOrderProblem, reserveOrder } from "../../lib/api"
+import { createOrder, fetchOrders, fulfillOrder, markOrderProblem, reserveOrder } from "../../lib/api"
 import { useAppStore } from "../../lib/store"
 
 export default function OrdersPage() {
   const token = useAppStore((s) => s.token)
   const role = useAppStore((s) => s.role)
   const [reserveCodeId, setReserveCodeId] = useState<Record<number, string>>({})
+
+  const [externalOrderId, setExternalOrderId] = useState("")
+  const [currency, setCurrency] = useState("EUR")
+  const [nominal, setNominal] = useState("20")
+
   const qc = useQueryClient()
 
   const ordersQuery = useQuery({
     queryKey: ["orders", token],
     queryFn: () => fetchOrders(token),
     retry: false
+  })
+
+  const createMutation = useMutation({
+    mutationFn: () => createOrder(
+      {
+        external_order_id: externalOrderId,
+        sell_nominal_id: 1,
+        customer_currency: currency,
+        customer_nominal: Number(nominal)
+      },
+      token
+    ),
+    onSuccess: () => {
+      setExternalOrderId("")
+      qc.invalidateQueries({ queryKey: ["orders", token] })
+    }
   })
 
   const reserveMutation = useMutation({
@@ -38,6 +59,20 @@ export default function OrdersPage() {
   return (
     <div className="grid">
       <h1>Orders</h1>
+
+      <div className="card grid">
+        <h3>Create order</h3>
+        <input className="input" placeholder="External order id" value={externalOrderId} onChange={(e) => setExternalOrderId(e.target.value)} />
+        <select className="select" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+          <option>EUR</option>
+          <option>USD</option>
+          <option>CNY</option>
+          <option>KZT</option>
+        </select>
+        <input className="input" placeholder="Nominal" value={nominal} onChange={(e) => setNominal(e.target.value)} />
+        <button className="button" disabled={!canOperate || createMutation.isPending} onClick={() => createMutation.mutate()}>Create</button>
+      </div>
+
       <div className="card">
         {ordersQuery.isLoading ? (
           <p>Loading…</p>

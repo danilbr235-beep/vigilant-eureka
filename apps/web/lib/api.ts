@@ -65,6 +65,15 @@ export async function fetchOrders(token?: string): Promise<OrderItem[]> {
   return (data.items as OrderItem[]) ?? []
 }
 
+export async function createOrder(payload: {
+  external_order_id: string
+  sell_nominal_id: number
+  customer_currency: string
+  customer_nominal: number
+}, token?: string) {
+  return postJson("/orders", payload, token)
+}
+
 export async function reserveOrder(orderId: number, codeIds: number[], token?: string) {
   return postJson(
     `/orders/${orderId}/reserve`,
@@ -89,6 +98,15 @@ export async function fetchPricing(token?: string): Promise<PricingItem[]> {
 
 export async function fetchInventory(token?: string): Promise<InventoryItem[]> {
   return (await getJson("/inventory/codes", token)) as unknown as InventoryItem[]
+}
+
+export async function createCode(payload: {
+  supplier_code_type_id: number
+  purchase_batch_id: number
+  code: string
+  cost_rub: number
+}, token?: string) {
+  return postJson("/inventory/codes", payload, token)
 }
 
 export async function revealCode(codeId: number, token?: string) {

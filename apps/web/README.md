@@ -9,9 +9,13 @@ Stage 4 admin panel scaffold on Next.js (App Router) with:
 - Dashboard summary from `/api/v1/dashboard/summary`
 - Orders page:
   - fetch list from `/api/v1/orders`
+  - create order (`POST /api/v1/orders`)
   - actions: reserve (`/orders/{id}/reserve`), fulfill, mark problem
 - Pricing page data fetch from `/api/v1/pricing/recommendations` (fallback to mock)
-- Inventory page data fetch from `/api/v1/inventory/codes` and reveal action `/inventory/codes/{id}/reveal`
+- Inventory page:
+  - list from `/api/v1/inventory/codes`
+  - create code (`POST /api/v1/inventory/codes`)
+  - reveal action `/inventory/codes/{id}/reveal`
 - Reports page data from `/api/v1/reports/*`
 - Settings save via `PATCH /api/v1/settings` (admin only)
 
