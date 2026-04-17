@@ -54,6 +54,16 @@ cd apps/api
 pytest -q
 ```
 
+Если локально не установлены Python/Node зависимости, запускай проверки в контейнерах:
+
+```bash
+# API tests (из корня репо)
+docker run --rm -v "$PWD/apps/api:/app" -w /app python:3.11-slim sh -lc "pip install -e . && pytest -q"
+
+# Web build (из корня репо)
+docker run --rm -v "$PWD/apps/web:/app" -w /app node:20-alpine sh -lc "npm install && npm run build"
+```
+
 ## Миграции
 
 ```bash
