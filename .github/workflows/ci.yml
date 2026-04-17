@@ -5,6 +5,16 @@ on:
   pull_request:
 
 jobs:
+  dev-tools:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate helper tooling
+        run: |
+          sh -n scripts/check-in-docker.sh
+          make help
+
   api-tests:
     runs-on: ubuntu-latest
     steps:
